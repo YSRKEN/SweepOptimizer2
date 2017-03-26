@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bitboard.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="problem.cpp" />
   </ItemGroup>
