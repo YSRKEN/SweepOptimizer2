@@ -3,6 +3,7 @@
 
 // 清掃員の種類(男の子・女の子・ロボット)
 enum class StaffType { Boy, Girl, Robot, Size };
+const size_t StaffTypeSize = static_cast<size_t>(StaffType::Size);
 // 清掃員に残ったタスク(リンゴ・ビン捨て)があるならNonFree, ないならFree
 enum class StaffTask { Free, NonFree };
 
@@ -38,7 +39,7 @@ Problem::Problem(const char file_name[]) {
 			&& temp_floor[point] != FloorObject::Recycle
 			&& temp_floor[point] != FloorObject::Block);
 	};
-	point_staff_.resize(static_cast<size_t>(StaffType::Size));
+	point_staff_.resize(StaffTypeSize);
 	for (size_t y = 0; y < size_y_; ++y) {
 		for (size_t x = 0; x < size_x_; ++x) {
 			size_t point = y * size_x_ + x;
@@ -119,13 +120,80 @@ Problem::Problem(const char file_name[]) {
 		}
 	}
 	// 従業員の最大歩数を記録する
-	
+	walk_count_.resize(StaffTypeSize);
+	staff_task_.resize(StaffTypeSize);
+	size_t max_walk_count = 0;
+	for (size_t ti = 0; ti < StaffTypeSize; ++ti) {
+		size_t staff_size;
+		ifs >> staff_size;
+		if (point_staff_[ti].size() != staff_size)
+			throw "問題ファイルを読み込めませんでした.";
+		walk_count_[ti].resize(staff_size);
+		staff_task_[ti].resize(staff_size);
+		for (size_t si = 0; si < staff_size; ++si) {
+			size_t walk_count;
+			ifs >> walk_count;
+			walk_count_[ti][si] = walk_count;
+			max_walk_count = std::max(walk_count, max_walk_count);
+			staff_task_[ti][si] = StaffTask::Free;
+		}
+	}
+	walk_staff_list_.resize(max_walk_count + 1);
+	for (size_t ti = 0; ti < StaffTypeSize; ++ti) {
+		for (size_t si = 0; si < walk_count_[ti].size(); ++si) {
+			for (size_t wi = 0; wi <= walk_count_[ti][si]; ++wi) {
+				walk_staff_list_[wi].push_back(std::pair<size_t, size_t>(ti, si));
+			}
+		}
+	}
+}
 
-/*	floor_dirty_.put(size_x_, size_y_);
+// 内容を表示する
+void Problem::put() const noexcept {
+	cout << "【内容表示】" << endl;
+	cout << "盤面サイズ：" << size_x_ << "x" << size_y_ << endl;
+	cout << "移動可能な場所：" << endl;
+	for (size_t y = 0; y < size_y_; ++y) {
+		for (size_t x = 0; x < size_x_; ++x) {
+			size_t point = y * size_x_ + x;
+			cout << (point_next_[point].size() != 0 ? "・" : "■");
+		}
+		cout << endl;
+	}
+	cout << endl;
+	cout << "汚れた床：" << endl;
+	floor_dirty_.put(size_x_, size_y_);
+	cout << "水たまり：" << endl;
 	floor_pool_.put(size_x_, size_y_);
+	cout << "リンゴ：" << endl;
 	floor_apple_.put(size_x_, size_y_);
+	cout << "ビン：" << endl;
 	floor_bottle_.put(size_x_, size_y_);
+	cout << "ゴミ箱の周囲：" << endl;
 	floor_around_dust_.put(size_x_, size_y_);
-	floor_around_recycle_.put(size_x_, size_y_);*/
-	cout << file_name << endl;
+	cout << "リサイクル箱の周囲：" << endl;
+	floor_around_recycle_.put(size_x_, size_y_);
+	cout << "メンバーリスト：" << endl;
+	for (size_t ti = 0; ti < StaffTypeSize; ++ti) {
+		for (size_t si = 0; si < point_staff_[ti].size(); ++si) {
+			size_t sx = point_staff_[ti][si] % size_x_;
+			size_t sy = point_staff_[ti][si] / size_x_;
+			cout << "種類：" << (ti == 0 ? "男の子　" : ti == 1 ? "女の子　" : "ロボット")
+				<< "　位置：(" << sx << "," << sy <<")"
+				<< "　歩数：" << walk_count_[ti][si] << endl;
+		}
+	}
+	cout << endl;
+	cout << "歩数による分類：" << endl;
+	for (size_t wi = 0; wi < walk_staff_list_.size(); ++wi) {
+		cout << "～" << wi << "歩";
+		for (const auto &it : walk_staff_list_[wi]) {
+			size_t sx = point_staff_[it.first][it.second] % size_x_;
+			size_t sy = point_staff_[it.first][it.second] / size_x_;
+			cout << "　種類：" << (it.first == 0 ? "男の子　" : it.first == 1 ? "女の子　" : "ロボット")
+				<< "　位置：(" << sx << ", " << sy <<")";
+		}
+		cout << endl;
+	}
+	cout << endl;
 }

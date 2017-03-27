@@ -49,7 +49,7 @@ void BitBoard::put(const size_t width, const size_t height) const noexcept {
 	for (size_t y = 0; y < height; ++y) {
 		for (size_t x = 0; x < width; ++x) {
 			size_t index = y * width + x;
-			cout << (get_bit(index) ? "■" : "□");
+			cout << (get_bit(index) ? "■" : "・");
 		}
 		cout << endl;
 	}

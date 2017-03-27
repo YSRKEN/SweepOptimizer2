@@ -1,7 +1,7 @@
 #pragma once
+#include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <vector>
 #include "bitboard.h"
 
@@ -25,6 +25,8 @@ class Problem{
 	// 清掃員の残タスクフラグ
 	// 女の子ならリンゴ・ロボットならビンを持つとNonFreeになる
 	vector<vector<StaffTask>> staff_task_;
+	// 清掃員の特定歩数におけるメンバーのインデックス
+	vector<vector<std::pair<size_t, size_t>>> walk_staff_list_;
 
 	// 拭く必要がある箇所は1、それ以外は0を立てる
 	// (まだ拭いていない箇所があれば非0、全て拭いていれば0)
@@ -42,4 +44,6 @@ class Problem{
 public:
 	// コンストラクタ
 	Problem(const char file_name[]);
-};
+	// 内容を表示する
+	void put() const noexcept;
+}; 

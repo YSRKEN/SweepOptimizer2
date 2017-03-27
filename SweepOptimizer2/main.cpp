@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
 	try {
 		// ファイルを読み込む
 		Problem problem(argv[1]);
+		problem.put();
 		// 探索を行う
 
 	}
