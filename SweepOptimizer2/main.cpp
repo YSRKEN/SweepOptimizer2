@@ -1,6 +1,7 @@
 ﻿#include <cstdlib>
 #include <iostream>
-#include "problem.cpp"
+#include "bitboard.h"
+#include "problem.h"
 
 // using宣言
 using std::cout;

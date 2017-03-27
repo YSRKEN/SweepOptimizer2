@@ -143,6 +143,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="problem.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="bitboard.h" />
+    <ClInclude Include="problem.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
