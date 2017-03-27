@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 		Problem problem(argv[1]);
 		problem.put();
 		// 探索を行う
-
+		problem.solve();
 	}
 	catch (char *str) {
 		cout << "エラー：" << str << endl;

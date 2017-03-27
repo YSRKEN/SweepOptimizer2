@@ -46,4 +46,6 @@ public:
 	Problem(const char file_name[]);
 	// “à—e‚ð•\Ž¦‚·‚é
 	void put() const noexcept;
-}; 
+	// –â‘è‚ð‰ð‚­
+	void solve();
+};

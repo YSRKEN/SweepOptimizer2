@@ -197,3 +197,16 @@ void Problem::put() const noexcept {
 	}
 	cout << endl;
 }
+
+// 問題を解く
+void Problem::solve(){
+	/* 各メンバーの初期位置は分かっているので、
+	 * 歩数を1歩づつ進めながら判定を行う。
+	 * 特定歩数において動ける清掃員の一覧はwalk_staff_list_から分かり、
+	 * 各清掃員をpoint_next_を見ながらそれぞれ動かす。
+	 * その際staff_task_・floor_dirty_・floor_pool_・floor_apple_・floor_bottle_は変化するし、
+	 * それらの変数の値をチェックすれば、完成したかが分かる。
+	 * (floor_around_dust_とfloor_around_recycle_は参照用)
+	 * ん、size_x_・size_y_・point_staff_・walk_count_は不要？
+	 */
+}
