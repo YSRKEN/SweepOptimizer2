@@ -24,4 +24,6 @@ public:
 	bool get_bit(const size_t index) const noexcept;
 	// 0に初期化する
 	void set_zero() noexcept;
+	// 出力(デバッグ用)
+	void put(const size_t width, const size_t height) const noexcept;
 };
