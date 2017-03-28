@@ -32,10 +32,16 @@ public:
 	bool get_bit(const size_t index) const noexcept;
 	// 全てのビットが寝ていればtrue、そうでなければfalseを返す
 	bool is_zero() const noexcept;
+	// 引数aのビットを内包していればtrue、そうでなければfalseを返す
+	bool has_bit(const BitBoard &a) const noexcept;
 	// 0に初期化する
 	void set_zero() noexcept;
 	// __m128iへのキャスト
 	operator __m128i() const noexcept {return data_;}
+	// オペレータ
+	const BitBoard operator & (const BitBoard &a) const noexcept;
+	const BitBoard operator | (const BitBoard &a) const noexcept;
+	void operator |= (const BitBoard &a) noexcept;
 	// コンストラクタ
 	BitBoard() {}
 	BitBoard(const __m128i bb) {

@@ -202,6 +202,35 @@ Problem::Problem(const char file_name[]) {
 			}
 		}
 	}
+	// min_costをビットボードにも記録しておく
+	size_t max_min_cost = 0;
+	for (size_t i = 0; i < size_all_; ++i) {
+		for (size_t j = 0; j < size_all_; ++j) {
+			if (min_cost_[i][j] != MAX_COST) {
+				max_min_cost = std::max(max_min_cost, min_cost_[i][j]);
+			}
+		}
+	}
+	min_cost_bb_.resize(size_all_);
+	min_cost_bb_combo_.resize(size_all_);
+	for (size_t i = 0; i < size_all_; ++i) {
+		BitBoard temp; temp.set_zero(); temp.set_bit(i);
+		min_cost_bb_[i].resize(max_walk_count_ + 1, temp);
+		min_cost_bb_combo_[i].resize(max_walk_count_ + 1, temp);
+		for (size_t j = 0; j < size_all_; ++j) {
+			if (min_cost_[i][j] < MAX_COST) {
+				for (size_t k = min_cost_[i][j]; k <= max_walk_count_; ++k) {
+					min_cost_bb_[i][k].set_bit(j);
+				}
+			}
+		}
+		for (size_t k = 0; k <= max_walk_count_ - 2; ++k) {
+			min_cost_bb_combo_[i][k] = min_cost_bb_[i][k + 2];
+		}
+		for (size_t k = max_walk_count_ - 1; k <= max_walk_count_; ++k) {
+			min_cost_bb_combo_[i][k] = min_cost_bb_combo_[i][max_walk_count_ - 2];
+		}
+	}
 	// マスクを初期化する
 	initialize_mask(size_x_, size_y_);
 }
@@ -259,12 +288,12 @@ void Problem::put() const noexcept {
 // 問題を解く
 bool Problem::solve(bool combo_flg){
 	if (combo_flg) {
-		return solve_with_combo_impl(max_walk_count_, walk_staff_list_[1].size() - 1);
+		return solve_with_combo_impl(max_walk_count_, static_cast<int>(walk_staff_list_[1].size() - 1));
 	}
 	else {
 
 	}
-	return solve_impl(max_walk_count_, walk_staff_list_[1].size() - 1);
+	return solve_impl(max_walk_count_, static_cast<int>(walk_staff_list_[1].size() - 1));
 }
 
 // 問題が解けていればtrue
@@ -290,56 +319,45 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 	if (step == -1) {
 		// 事前枝刈り
 		const auto &staff_all = walk_staff_list_[max_walk_count_ - depth + 1];
-		for (size_t point = 0; point < size_all_; ++point) {
-			if (floor_dirty_.get_bit(point)) {
-				bool clean_flg = false;
-				const bool pool_flg = floor_pool_.get_bit(point);
-				const bool apple_flg = floor_apple_.get_bit(point);
-				const bool bottle_flg = floor_bottle_.get_bit(point);
-				for (const auto &staff : staff_all) {
-					size_t staff_point = point_staff_[staff.first][staff.second];
-					if (min_cost_[point][staff_point] > walk_count_[staff.first][staff.second]
-					|| pool_flg && staff.first != static_cast<size_t>(StaffType::Boy)
-					|| apple_flg && staff.first != static_cast<size_t>(StaffType::Girl)
-					|| bottle_flg && staff.first != static_cast<size_t>(StaffType::Robot)) {
-						continue;
-					}
-					clean_flg = true;
-					break;
-				}
-				if (!clean_flg)
-					return false;
+		BitBoard boy_pattern; boy_pattern.set_zero();
+		BitBoard girl_pattern; girl_pattern.set_zero();
+		BitBoard robot_pattern; robot_pattern.set_zero();
+		for (const auto &staff : staff_all) {
+			size_t staff_point = point_staff_[staff.first][staff.second];
+			switch (staff.first) {
+			case static_cast<size_t>(StaffType::Boy) :
+				boy_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+				break;
+			case static_cast<size_t>(StaffType::Girl) :
+				girl_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+				break;
+			case static_cast<size_t>(StaffType::Robot) :
+				robot_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+				break;
 			}
 		}
+		if ((!(boy_pattern | girl_pattern | robot_pattern).has_bit(floor_dirty_))
+			|| (!boy_pattern.has_bit(floor_pool_))
+			|| (!girl_pattern.has_bit(floor_apple_))
+			|| (!robot_pattern.has_bit(floor_bottle_)))
+			return false;
 		// 枝刈りできなかったので探索を進める
-		size_t depth_ = depth - 1;
-		return solve_impl(depth_, walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1);
+		const size_t depth_ = depth - 1;
+		return solve_impl(depth_, static_cast<int>(walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1));
 	}
 	// それ以外なら、探索を進める
 	const auto &staff = walk_staff_list_[max_walk_count_ - depth + 1][step];
 	// 現在の状態を保存する
-	size_t now_point = point_staff_[staff.first][staff.second];
-	size_t now_prev_point = prev_point_staff_[staff.first][staff.second];
-	StaffTask now_task = staff_task_[staff.first][staff.second];
-	BitBoard now_floor_dirty_ = floor_dirty_;
-	BitBoard now_floor_pool_ = floor_pool_;
-	BitBoard now_floor_apple_ = floor_apple_;
-	BitBoard now_floor_bottle_ = floor_bottle_;
+	const size_t now_point = point_staff_[staff.first][staff.second];
+	const size_t now_prev_point = prev_point_staff_[staff.first][staff.second];
+	const StaffTask now_task = staff_task_[staff.first][staff.second];
+	const BitBoard now_floor_dirty_ = floor_dirty_;
+	const BitBoard now_floor_pool_ = floor_pool_;
+	const BitBoard now_floor_apple_ = floor_apple_;
+	const BitBoard now_floor_bottle_ = floor_bottle_;
 	// 移動方向を並び替える
-	/*vector<size_t> temp_point_next = point_next_[now_point];
-	size_t tpn_size = temp_point_next.size();
-	for (size_t i = 0; i < tpn_size - 1; ++i) {
-		for (size_t j = i + 1; j < tpn_size; ++j) {
-			if (!floor_dirty_.get_bit(temp_point_next[i]) && floor_dirty_.get_bit(temp_point_next[j])) {
-				size_t temp = temp_point_next[i];
-				temp_point_next[i] = temp_point_next[j];
-				temp_point_next[j] = temp;
-			}
-		}
-	}*/
 	// 最大3方向に移動
 	--walk_count_[staff.first][staff.second];
-	//for (size_t next_point : temp_point_next) {
 	for(size_t next_point : point_next_[now_point]){
 		if (next_point == now_prev_point)
 			continue;
@@ -420,41 +438,42 @@ bool Problem::solve_with_combo_impl(const size_t depth, const int step) {
 		}
 		// 事前枝刈り
 		const auto &staff_all = walk_staff_list_[max_walk_count_ - depth + 1];
-		for (size_t point = 0; point < size_all_; ++point) {
-			if (floor_dirty_.get_bit(point)) {
-				bool clean_flg = false;
-				const bool pool_flg = floor_pool_.get_bit(point);
-				const bool apple_flg = floor_apple_.get_bit(point);
-				const bool bottle_flg = floor_bottle_.get_bit(point);
-				for (const auto &staff : staff_all) {
-					size_t staff_point = point_staff_[staff.first][staff.second];
-					if (min_cost_[point][staff_point] > walk_count_[staff.first][staff.second] + 2
-						|| pool_flg && staff.first != static_cast<size_t>(StaffType::Boy)
-						|| apple_flg && staff.first != static_cast<size_t>(StaffType::Girl)
-						|| bottle_flg && staff.first != static_cast<size_t>(StaffType::Robot)) {
-						continue;
-					}
-					clean_flg = true;
-					break;
-				}
-				if (!clean_flg)
-					return false;
+		BitBoard boy_pattern; boy_pattern.set_zero();
+		BitBoard girl_pattern; girl_pattern.set_zero();
+		BitBoard robot_pattern; robot_pattern.set_zero();
+		for (const auto &staff : staff_all) {
+			size_t staff_point = point_staff_[staff.first][staff.second];
+			switch (staff.first) {
+			case static_cast<size_t>(StaffType::Boy) :
+				boy_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+				break;
+			case static_cast<size_t>(StaffType::Girl) :
+				girl_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+				break;
+			case static_cast<size_t>(StaffType::Robot) :
+				robot_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+				break;
 			}
 		}
+		if ((!(boy_pattern | girl_pattern | robot_pattern).has_bit(floor_dirty_))
+			|| (!boy_pattern.has_bit(floor_pool_))
+			|| (!girl_pattern.has_bit(floor_apple_))
+			|| (!robot_pattern.has_bit(floor_bottle_)))
+			return false;
 		// 枝刈りできなかったので探索を進める
-		size_t depth_ = depth - 1;
-		return solve_with_combo_impl(depth_, walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1);
+		const size_t depth_ = depth - 1;
+		return solve_with_combo_impl(depth_, static_cast<int>(walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1));
 	}
 	// それ以外なら、探索を進める
 	const auto &staff = walk_staff_list_[max_walk_count_ - depth + 1][step];
 	// 現在の状態を保存する
-	size_t now_point = point_staff_[staff.first][staff.second];
-	size_t now_prev_point = prev_point_staff_[staff.first][staff.second];
-	StaffTask now_task = staff_task_[staff.first][staff.second];
-	BitBoard now_floor_dirty_ = floor_dirty_;
-	BitBoard now_floor_pool_ = floor_pool_;
-	BitBoard now_floor_apple_ = floor_apple_;
-	BitBoard now_floor_bottle_ = floor_bottle_;
+	const size_t now_point = point_staff_[staff.first][staff.second];
+	const size_t now_prev_point = prev_point_staff_[staff.first][staff.second];
+	const StaffTask now_task = staff_task_[staff.first][staff.second];
+	const BitBoard now_floor_dirty_ = floor_dirty_;
+	const BitBoard now_floor_pool_ = floor_pool_;
+	const BitBoard now_floor_apple_ = floor_apple_;
+	const BitBoard now_floor_bottle_ = floor_bottle_;
 	// 最大4方向に移動
 	--walk_count_[staff.first][staff.second];
 	for (size_t next_point : point_next_[now_point]) {
@@ -529,7 +548,7 @@ void Problem::show_answer() const {
 			size_t sx = first_point_staff_[ti][si] % size_x_;
 			size_t sy = first_point_staff_[ti][si] / size_x_;
 			cout << "(" << sx << "," << sy << ")　";
-			for (int k = list.size() - 1; k >= 0; --k){
+			for (int k = static_cast<int>(list.size() - 1); k >= 0; --k){
 				cout << list[k];
 				if (k >= 1) {
 					if (list[k] + size_x_ == list[k - 1]) {

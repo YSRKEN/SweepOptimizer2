@@ -38,6 +38,11 @@ class Problem{
 	vector<vector<vector<size_t>>> staff_root_;
 	// 最小移動コスト
 	vector<vector<size_t>> min_cost_;
+	// 最小移動コスト(ビットボード版)
+	// min_cost_bb_[スタート][移動マス数]
+	// 1～移動マス数まで進んだ際に到達可能な位置のビットが立っている
+	vector<vector<BitBoard>> min_cost_bb_;
+	vector<vector<BitBoard>> min_cost_bb_combo_;
 	// かち合う可能性がある清掃員一覧
 	vector<std::pair<std::pair<size_t, size_t>, std::pair<size_t, size_t>>> combo_staff_list_;
 

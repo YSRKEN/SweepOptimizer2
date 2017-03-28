@@ -27,34 +27,35 @@ void initialize() noexcept{
 
 void initialize_mask(const size_t size_x, const size_t size_y) noexcept {
 	// ビット演算用にマスクを初期化
-	for (uint64_t i = 0; i < MAX_BOARD_SIZE; ++i) {
-		size_t x = i % size_x;
-		size_t y = i / size_x;
-		mask[i] = bit[i];
-		// 左上
-		if (x >= 1 && y >= 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i - size_x - 1]);
-		// 上
-		if (y >= 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i - size_x]);
-		// 右上
-		if (x < size_x - 1 && y >= 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i - size_x + 1]);
-		// 左
-		if (x >= 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i - 1]);
-		// 右
-		if (x < size_x - 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i + 1]);
-		// 左下
-		if (x >= 1 && y < size_y - 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i + size_x - 1]);
-		// 下
-		if (y < size_y - 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i + size_x]);
-		// 右下
-		if (x < size_x - 1 && y < size_y - 1)
-			mask[i] = _mm_or_si128(mask[i], bit[i + size_x + 1]);
+	for (uint64_t y = 0; y < size_y; ++y) {
+		for (uint64_t x = 0; x < size_x; ++x) {
+			size_t i = y * size_x + x;
+			mask[i] = bit[i];
+			// 左上
+			if (x >= 1 && y >= 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i - size_x - 1]);
+			// 上
+			if (y >= 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i - size_x]);
+			// 右上
+			if (x < size_x - 1 && y >= 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i - size_x + 1]);
+			// 左
+			if (x >= 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i - 1]);
+			// 右
+			if (x < size_x - 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i + 1]);
+			// 左下
+			if (x >= 1 && y < size_y - 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i + size_x - 1]);
+			// 下
+			if (y < size_y - 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i + size_x]);
+			// 右下
+			if (x < size_x - 1 && y < size_y - 1)
+				mask[i] = _mm_or_si128(mask[i], bit[i + size_x + 1]);
+		}
 	}
 }
 
@@ -83,9 +84,26 @@ bool BitBoard::get_bit(const size_t index) const noexcept {
 bool BitBoard::is_zero() const noexcept {
 	return (_mm_testz_si128(data_, data_) == 1);
 }
+// 引数aのビットを内包していればtrue、そうでなければfalseを返す
+bool BitBoard::has_bit(const BitBoard &a) const noexcept {
+	const auto temp = _mm_and_si128(data_, a);
+	const auto temp2 = _mm_xor_si128(temp, a);
+	return (_mm_testz_si128(temp2, temp2) == 1);
+}
 // 0に初期化する
 void BitBoard::set_zero() noexcept {
 	data_ = _mm_setzero_si128();
+}
+
+// オペレータ
+const BitBoard BitBoard::operator & (const BitBoard &a) const noexcept {
+	return BitBoard(_mm_and_si128(data_, a));
+}
+const BitBoard BitBoard::operator | (const BitBoard &a) const noexcept {
+	return BitBoard(_mm_or_si128(data_, a));
+}
+void BitBoard::operator |= (const BitBoard &a) noexcept {
+	data_ = _mm_or_si128(data_, a);
 }
 
 // 出力(デバッグ用)
