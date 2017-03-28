@@ -20,6 +20,7 @@ class Problem{
 	vector<vector<size_t>> point_next_;
 	// 清掃員の位置
 	vector<vector<size_t>> point_staff_;
+	vector<vector<size_t>> first_point_staff_;
 	// 清掃員の1つ前の位置
 	vector<vector<size_t>> prev_point_staff_;
 	// 清掃員の最大歩数
@@ -32,6 +33,8 @@ class Problem{
 	vector<vector<std::pair<size_t, size_t>>> walk_staff_list_;
 	// 清掃員の最大歩数
 	size_t max_walk_count_;
+	// 正解ルートにおける清掃員の移動経路
+	vector<vector<vector<size_t>>> staff_root_;
 
 	// 拭く必要がある箇所は1、それ以外は0を立てる
 	// (まだ拭いていない箇所があれば非0、全て拭いていれば0)
@@ -67,4 +70,6 @@ public:
 	void put() const noexcept;
 	// 問題を解く
 	void solve();
+	// 解を表示する
+	void show_answer() const;
 };

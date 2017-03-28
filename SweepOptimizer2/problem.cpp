@@ -123,9 +123,11 @@ Problem::Problem(const char file_name[]) {
 			}
 		}
 	}
+	first_point_staff_ = point_staff_;
 	// 従業員の最大歩数を記録する
 	walk_count_.resize(StaffTypeSize);
 	staff_task_.resize(StaffTypeSize);
+	staff_root_.resize(StaffTypeSize);
 	max_walk_count_ = 0;
 	for (size_t ti = 0; ti < StaffTypeSize; ++ti) {
 		size_t staff_size;
@@ -134,6 +136,7 @@ Problem::Problem(const char file_name[]) {
 			throw "問題ファイルを読み込めませんでした.";
 		walk_count_[ti].resize(staff_size);
 		staff_task_[ti].resize(staff_size);
+		staff_root_[ti].resize(staff_size);
 		for (size_t si = 0; si < staff_size; ++si) {
 			size_t walk_count;
 			ifs >> walk_count;
@@ -244,75 +247,107 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 	// それ以外なら、探索を進める
 	//cout << depth << " " << step << " " << walk_staff_list_[max_walk_count_ - depth + 1].size() << endl;
 	const auto &staff = walk_staff_list_[max_walk_count_ - depth + 1][step];
-		// 現在の状態を保存する
-		size_t now_point = point_staff_[staff.first][staff.second];
-		size_t now_prev_point = prev_point_staff_[staff.first][staff.second];
-		StaffTask now_task = staff_task_[staff.first][staff.second];
-		BitBoard now_floor_dirty_ = floor_dirty_;
-		BitBoard now_floor_pool_ = floor_pool_;
-		BitBoard now_floor_apple_ = floor_apple_;
-		BitBoard now_floor_bottle_ = floor_bottle_;
-		// 最大4方向に移動
-		--walk_count_[staff.first][staff.second];
-		for (size_t next_point : point_next_[now_point]) {
-			if (next_point == now_prev_point)
-				continue;
+	// 現在の状態を保存する
+	size_t now_point = point_staff_[staff.first][staff.second];
+	size_t now_prev_point = prev_point_staff_[staff.first][staff.second];
+	StaffTask now_task = staff_task_[staff.first][staff.second];
+	BitBoard now_floor_dirty_ = floor_dirty_;
+	BitBoard now_floor_pool_ = floor_pool_;
+	BitBoard now_floor_apple_ = floor_apple_;
+	BitBoard now_floor_bottle_ = floor_bottle_;
+	// 最大4方向に移動
+	--walk_count_[staff.first][staff.second];
+	for (size_t next_point : point_next_[now_point]) {
+		if (next_point == now_prev_point)
+			continue;
+		// 1歩進める
+		point_staff_[staff.first][staff.second] = next_point;
+		prev_point_staff_[staff.first][staff.second] = now_point;
+		floor_dirty_.unset_bit(next_point);
+		//cout << depth << " [" << staff.first << " " << staff.second << "(" << walk_count_[staff.first][staff.second] << ")] " << now_point << "->" << next_point << endl;
+		switch (static_cast<StaffType>(staff.first)) {
+		case StaffType::Boy:
 			// 1歩進める
-			point_staff_[staff.first][staff.second] = next_point;
-			prev_point_staff_[staff.first][staff.second] = now_point;
-			floor_dirty_.unset_bit(next_point);
-			//cout << depth << " [" << staff.first << " " << staff.second << "(" << walk_count_[staff.first][staff.second] << ")] " << now_point << "->" << next_point << endl;
-			switch (static_cast<StaffType>(staff.first)) {
-			case StaffType::Boy:
-				// 1歩進める
-				floor_pool_.unset_bit(next_point);
-				// 再帰を1段進める
-				if (solve_impl(depth, step - 1)) {
-					cout << "進度" << depth << " 清掃員[" << staff.first << " " << staff.second << "] " << now_point << "->" << next_point << endl;
-					return true;
-				}
-				// 1歩戻す
-				floor_pool_ = now_floor_pool_;
-				break;
-			case StaffType::Girl:
-				// 1歩進める
-				if(floor_apple_.get_bit(next_point))
-					staff_task_[staff.first][staff.second] = StaffTask::NonFree;
-				if(floor_around_dust_.get_bit(next_point))
-					staff_task_[staff.first][staff.second] = StaffTask::Free;
-				floor_apple_.unset_bit(next_point);
-				// 再帰を1段進める
-				if (solve_impl(depth, step - 1)) {
-					cout << "進度" << depth << " 清掃員[" << staff.first << " " << staff.second << "] " << now_point << "->" << next_point << endl;
-					return true;
-				}
-				// 1歩戻す
-				staff_task_[staff.first][staff.second] = now_task;
-				floor_apple_ = now_floor_apple_;
-				break;
-			case StaffType::Robot:
-				// 1歩進める
-				if (floor_bottle_.get_bit(next_point))
-					staff_task_[staff.first][staff.second] = StaffTask::NonFree;
-				if (floor_around_recycle_.get_bit(next_point))
-					staff_task_[staff.first][staff.second] = StaffTask::Free;
-				floor_bottle_.unset_bit(next_point);
-				// 再帰を1段進める
-				if (solve_impl(depth, step - 1)) {
-					cout << "進度" << depth << " 清掃員[" << staff.first << " " << staff.second << "] " << now_point << "->" << next_point << endl;
-					return true;
-				}
-				// 1歩戻す
-				staff_task_[staff.first][staff.second] = now_task;
-				floor_bottle_ = now_floor_bottle_;
-				break;
+			floor_pool_.unset_bit(next_point);
+			// 再帰を1段進める
+			if (solve_impl(depth, step - 1)) {
+				staff_root_[staff.first][staff.second].push_back(next_point);
+				//cout << "進度" << depth << " 清掃員[" << staff.first << " " << staff.second << "] " << now_point << "->" << next_point << endl;
+				return true;
 			}
 			// 1歩戻す
-			floor_dirty_ = now_floor_dirty_;
+			floor_pool_ = now_floor_pool_;
+			break;
+		case StaffType::Girl:
+			// 1歩進める
+			if (floor_apple_.get_bit(next_point))
+				staff_task_[staff.first][staff.second] = StaffTask::NonFree;
+			if (floor_around_dust_.get_bit(next_point))
+				staff_task_[staff.first][staff.second] = StaffTask::Free;
+			floor_apple_.unset_bit(next_point);
+			// 再帰を1段進める
+			if (solve_impl(depth, step - 1)) {
+				staff_root_[staff.first][staff.second].push_back(next_point);
+				//cout << "進度" << depth << " 清掃員[" << staff.first << " " << staff.second << "] " << now_point << "->" << next_point << endl;
+				return true;
+			}
+			// 1歩戻す
+			staff_task_[staff.first][staff.second] = now_task;
+			floor_apple_ = now_floor_apple_;
+			break;
+		case StaffType::Robot:
+			// 1歩進める
+			if (floor_bottle_.get_bit(next_point))
+				staff_task_[staff.first][staff.second] = StaffTask::NonFree;
+			if (floor_around_recycle_.get_bit(next_point))
+				staff_task_[staff.first][staff.second] = StaffTask::Free;
+			floor_bottle_.unset_bit(next_point);
+			// 再帰を1段進める
+			if (solve_impl(depth, step - 1)) {
+				staff_root_[staff.first][staff.second].push_back(next_point);
+				//cout << "進度" << depth << " 清掃員[" << staff.first << " " << staff.second << "] " << now_point << "->" << next_point << endl;
+				return true;
+			}
+			// 1歩戻す
+			staff_task_[staff.first][staff.second] = now_task;
+			floor_bottle_ = now_floor_bottle_;
+			break;
 		}
-		point_staff_[staff.first][staff.second] = now_point;
-		prev_point_staff_[staff.first][staff.second] = now_prev_point;
-		staff_task_[staff.first][staff.second] = now_task;
-		++walk_count_[staff.first][staff.second];
+		// 1歩戻す
+		floor_dirty_ = now_floor_dirty_;
+	}
+	point_staff_[staff.first][staff.second] = now_point;
+	prev_point_staff_[staff.first][staff.second] = now_prev_point;
+	staff_task_[staff.first][staff.second] = now_task;
+	++walk_count_[staff.first][staff.second];
 	return false;
+}
+
+// 解を表示する
+void Problem::show_answer() const {
+	for (size_t ti = 0; ti < StaffTypeSize; ++ti) {
+		for (size_t si = 0; si < point_staff_[ti].size(); ++si) {
+			auto list = staff_root_[ti][si];
+			list.push_back(first_point_staff_[ti][si]);
+			cout << "種類：" << (ti == 0 ? "男の子　" : ti == 1 ? "女の子　" : "ロボット");
+			size_t sx = first_point_staff_[ti][si] % size_x_;
+			size_t sy = first_point_staff_[ti][si] / size_x_;
+			cout << "(" << sx << "," << sy << ")　";
+			for (int k = list.size() - 1; k >= 0; --k){
+				cout << list[k];
+				if (list[k] + size_x_ == list[k - 1]) {
+					cout << "(↓)";
+				}else if (list[k] == list[k - 1] + size_x_) {
+					cout << "(↑)";
+				}else if (list[k] + 1 == list[k - 1]) {
+					cout << "(→)";
+				}else if (list[k] == list[k - 1] + 1) {
+					cout << "(←)";
+				}
+				if (k != 0)
+					cout << "⇒";
+			}
+			cout << endl;
+		}
+	}
 }

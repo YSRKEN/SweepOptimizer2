@@ -1,5 +1,6 @@
 ﻿#include <cstdlib>
 #include <iostream>
+#include <chrono>
 #include "bitboard.h"
 #include "problem.h"
 
@@ -19,7 +20,13 @@ int main(int argc, char *argv[]) {
 		Problem problem(argv[1]);
 		problem.put();
 		// 探索を行う
+		auto start_time = std::chrono::high_resolution_clock::now();
 		problem.solve();
+		auto end_time = std::chrono::high_resolution_clock::now();
+		// 解を表示する
+		problem.show_answer();
+		auto duaration = std::chrono::duration_cast< std::chrono::microseconds >(end_time - start_time).count();
+		cout << duaration << "[ms]" << endl;
 	}
 	catch (char *str) {
 		cout << "エラー：" << str << endl;
