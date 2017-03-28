@@ -17,14 +17,24 @@ int main(int argc, char *argv[]) {
 	// 問題を読み込み、計算を行う
 	try {
 		// ファイルを読み込む
-		Problem problem(argv[1]);
+		//Problem problem(argv[1]);
+		Problem problem("q59.txt");
 		problem.put();
 		// 探索を行う
 		auto start_time = std::chrono::high_resolution_clock::now();
-		problem.solve();
+		bool solve_flg = problem.solve(false);
 		auto end_time = std::chrono::high_resolution_clock::now();
+		if (!solve_flg) {
+			auto duaration = std::chrono::duration_cast< std::chrono::milliseconds >(end_time - start_time).count();
+			cout << duaration << "[ms]..." << endl;
+			solve_flg = problem.solve(true);
+			end_time = std::chrono::high_resolution_clock::now();
+		}
+		//problem.put();
 		// 解を表示する
-		problem.show_answer();
+		if (solve_flg) {
+			problem.show_answer();
+		}
 		auto duaration = std::chrono::duration_cast< std::chrono::milliseconds >(end_time - start_time).count();
 		cout << duaration << "[ms]" << endl;
 	}

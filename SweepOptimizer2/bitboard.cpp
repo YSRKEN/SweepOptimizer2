@@ -5,6 +5,8 @@ const size_t MAX_BOARD_SIZE{ 81 };
 // ビット演算用に用意するテーブル
 // bit[x]は、xビット目のみ立っている値となる
 BitBoard bit[MAX_BOARD_SIZE];
+// mask[x]は、xビット目とその周囲が立っている
+BitBoard mask[MAX_BOARD_SIZE];
 
 // ビット演算用にテーブルを準備する
 void initialize() noexcept{
@@ -23,6 +25,39 @@ void initialize() noexcept{
 	}
 }
 
+void initialize_mask(const size_t size_x, const size_t size_y) noexcept {
+	// ビット演算用にマスクを初期化
+	for (uint64_t i = 0; i < MAX_BOARD_SIZE; ++i) {
+		size_t x = i % size_x;
+		size_t y = i / size_x;
+		mask[i] = bit[i];
+		// 左上
+		if (x >= 1 && y >= 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i - size_x - 1]);
+		// 上
+		if (y >= 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i - size_x]);
+		// 右上
+		if (x < size_x - 1 && y >= 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i - size_x + 1]);
+		// 左
+		if (x >= 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i - 1]);
+		// 右
+		if (x < size_x - 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i + 1]);
+		// 左下
+		if (x >= 1 && y < size_y - 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i + size_x - 1]);
+		// 下
+		if (y < size_y - 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i + size_x]);
+		// 右下
+		if (x < size_x - 1 && y < size_y - 1)
+			mask[i] = _mm_or_si128(mask[i], bit[i + size_x + 1]);
+	}
+}
+
 // 特定のビットの位置を立たせる(1にする)
 void BitBoard::set_bit(const size_t index) noexcept {
 	data_ = _mm_or_si128(data_, bit[index]);
@@ -30,6 +65,10 @@ void BitBoard::set_bit(const size_t index) noexcept {
 // 特定のビットの位置を寝かせる(0にする)
 void BitBoard::unset_bit(const size_t index) noexcept {
 	data_ = _mm_andnot_si128(bit[index], data_);
+}
+// 特定のマスクを適用する
+void BitBoard::unset_mask(const size_t index) noexcept {
+	data_ = _mm_andnot_si128(mask[index], data_);
 }
 // 特定のビットの位置を反転させる
 void BitBoard::reverse_bit(const size_t index) noexcept {

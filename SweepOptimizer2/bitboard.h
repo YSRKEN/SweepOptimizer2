@@ -9,9 +9,11 @@ using std::endl;
 extern const size_t MAX_BOARD_SIZE;
 class BitBoard;
 extern BitBoard bit[];
+extern BitBoard mask[];
 
 // ビット演算用にテーブルを準備する
 void initialize() noexcept;
+void initialize_mask(const size_t size_x, const size_t size_y) noexcept;
 
 // ビットボードを表現するクラス
 class BitBoard {
@@ -21,6 +23,8 @@ public:
 	void set_bit(const size_t index) noexcept;
 	// 特定のビットの位置を寝かせる(0にする)
 	void unset_bit(const size_t index) noexcept;
+	// 特定のマスクを適用する
+	void BitBoard::unset_mask(const size_t index) noexcept;
 	// 特定のビットの位置を反転させる
 	void reverse_bit(const size_t index) noexcept;
 	// 特定のビットにある値を読み込む

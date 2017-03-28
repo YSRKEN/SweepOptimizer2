@@ -38,6 +38,8 @@ class Problem{
 	vector<vector<vector<size_t>>> staff_root_;
 	// 最小移動コスト
 	vector<vector<size_t>> min_cost_;
+	// かち合う可能性がある清掃員一覧
+	vector<std::pair<std::pair<size_t, size_t>, std::pair<size_t, size_t>>> combo_staff_list_;
 
 	// 拭く必要がある箇所は1、それ以外は0を立てる
 	// (まだ拭いていない箇所があれば非0、全て拭いていれば0)
@@ -63,6 +65,8 @@ class Problem{
 	// 初期値→最大値(walk_staff_list_[max_walk_count_ - depth].size() - 1と等しい)
 	// 最終値→-1
 	bool solve_impl(const size_t depth, const int step);
+	// ソルバー(コンボ考慮)
+	bool solve_with_combo_impl(const size_t depth, const int step);
 
 	// 問題が解けていればtrue
 	bool is_solved() const noexcept;
@@ -72,7 +76,7 @@ public:
 	// 内容を表示する
 	void put() const noexcept;
 	// 問題を解く
-	void solve();
+	bool solve(bool combo_flg);
 	// 解を表示する
 	void show_answer() const;
 };
