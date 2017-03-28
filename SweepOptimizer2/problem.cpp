@@ -142,7 +142,7 @@ Problem::Problem(const char file_name[]) {
 			staff_task_[ti][si] = StaffTask::Free;
 		}
 	}
-	walk_staff_list_.resize(max_walk_count_ + 1);
+	walk_staff_list_.resize(max_walk_count_ + 2);
 	for (size_t ti = 0; ti < StaffTypeSize; ++ti) {
 		for (size_t si = 0; si < walk_count_[ti].size(); ++si) {
 			for (size_t wi = 0; wi <= walk_count_[ti][si]; ++wi) {
@@ -204,7 +204,7 @@ void Problem::put() const noexcept {
 
 // 問題を解く
 void Problem::solve(){
-	solve_impl(max_walk_count_, walk_staff_list_[0].size() - 1);
+	solve_impl(max_walk_count_, walk_staff_list_[1].size() - 1);
 	/* 各メンバーの初期位置は分かっているので、
 	 * 歩数を1歩づつ進めながら判定を行う。
 	 * 特定歩数において動ける清掃員の一覧はwalk_staff_list_から分かり、
@@ -234,19 +234,16 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 	//floor_dirty_.put(size_x_, size_y_);
 	// depth == 0 なら、正解盤面になっているかの判定を行う
 	if (depth == 0) {
-		bool solved = is_solved();
-		if (solved) {
-			put();
-			int a = 1;
-		}
-		return solved;
+		return is_solved();
 	}
 	// step == -1 なら、depthを1つ増やす
 	if (step == -1) {
-		return solve_impl(depth - 1, walk_staff_list_[max_walk_count_ - depth + 1].size() - 1);
+		size_t depth_ = depth - 1;
+		return solve_impl(depth_, walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1);
 	}
 	// それ以外なら、探索を進める
-	const auto &staff = walk_staff_list_[max_walk_count_ - depth][step];
+	//cout << depth << " " << step << " " << walk_staff_list_[max_walk_count_ - depth + 1].size() << endl;
+	const auto &staff = walk_staff_list_[max_walk_count_ - depth + 1][step];
 		// 現在の状態を保存する
 		size_t now_point = point_staff_[staff.first][staff.second];
 		size_t now_prev_point = prev_point_staff_[staff.first][staff.second];
@@ -307,7 +304,7 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 				}
 				// 1歩戻す
 				staff_task_[staff.first][staff.second] = now_task;
-				floor_bottle_ = now_floor_apple_;
+				floor_bottle_ = now_floor_bottle_;
 				break;
 			}
 			// 1歩戻す
