@@ -7,6 +7,8 @@ const size_t StaffTypeSize = static_cast<size_t>(StaffType::Size);
 // 清掃員に残ったタスク(リンゴ・ビン捨て)があるならNonFree, ないならFree
 enum class StaffTask { Free, NonFree };
 
+const size_t MAX_COST = 10000;
+
 // コンストラクタ
 Problem::Problem(const char file_name[]) {
 	// 読み込み用定数
@@ -15,8 +17,9 @@ Problem::Problem(const char file_name[]) {
 	std::ifstream ifs(file_name);
 	// 盤面サイズを読み込む
 	ifs >> size_x_ >> size_y_;
+	size_all_ = size_x_ * size_y_;
 	// 各メンバ変数を初期化
-	point_next_.resize(size_x_ * size_y_);
+	point_next_.resize(size_all_);
 	floor_dirty_.set_zero();
 	floor_pool_.set_zero();
 	floor_apple_.set_zero();
@@ -24,7 +27,7 @@ Problem::Problem(const char file_name[]) {
 	floor_around_dust_.set_zero();
 	floor_around_recycle_.set_zero();
 	// テンポラリ配列に盤面を読み込む
-	vector<FloorObject> temp_floor(size_x_ * size_y_);
+	vector<FloorObject> temp_floor(size_all_);
 	for (size_t y = 0; y < size_y_; ++y) {
 		for (size_t x = 0; x < size_x_; ++x) {
 			size_t temp;
@@ -124,6 +127,30 @@ Problem::Problem(const char file_name[]) {
 		}
 	}
 	first_point_staff_ = point_staff_;
+	// 事前に最小移動歩数を計算しておく(ワーシャル・フロイド法)
+	min_cost_.resize(size_all_);
+	for (size_t k = 0; k < size_all_; ++k) {
+		min_cost_[k].resize(size_all_, MAX_COST);
+	}
+	for (size_t y = 0; y < size_y_; ++y) {
+		for (size_t x = 0; x < size_x_; ++x) {
+			size_t point = y * size_x_ + x;
+			if (can_move_area(point)) {
+				min_cost_[point][point] = 0;
+				for (size_t next_point : point_next_[point]) {
+					min_cost_[point][next_point] = 1;
+					min_cost_[next_point][point] = 1;
+				}
+			}
+		}
+	}
+	for (size_t k = 0; k < size_all_; ++k) {
+		for (size_t i = 0; i < size_all_; ++i) {
+			for (size_t j = 0; j < size_all_; ++j) {
+				min_cost_[i][j] = std::min(min_cost_[i][j], min_cost_[i][k] + min_cost_[k][j]);
+			}
+		}
+	}
 	// 従業員の最大歩数を記録する
 	walk_count_.resize(StaffTypeSize);
 	staff_task_.resize(StaffTypeSize);
@@ -241,6 +268,24 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 	}
 	// step == -1 なら、depthを1つ増やす
 	if (step == -1) {
+
+		// 事前枝刈り
+		const auto &staff_all = walk_staff_list_[max_walk_count_ - depth + 1];
+		for (size_t point = 0; point < size_all_; ++point) {
+			if (floor_dirty_.get_bit(point)) {
+				bool clean_flg = false;
+				for (const auto &staff : staff_all) {
+					size_t staff_point = point_staff_[staff.first][staff.second];
+					if (min_cost_[point][staff_point] <= walk_count_[staff.first][staff.second]) {
+						clean_flg = true;
+						break;
+					}
+				}
+				if (!clean_flg)
+					return false;
+			}
+		}
+
 		size_t depth_ = depth - 1;
 		return solve_impl(depth_, walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1);
 	}

@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 		auto end_time = std::chrono::high_resolution_clock::now();
 		// 解を表示する
 		problem.show_answer();
-		auto duaration = std::chrono::duration_cast< std::chrono::microseconds >(end_time - start_time).count();
+		auto duaration = std::chrono::duration_cast< std::chrono::milliseconds >(end_time - start_time).count();
 		cout << duaration << "[ms]" << endl;
 	}
 	catch (char *str) {

@@ -16,6 +16,7 @@ class Problem{
 	// 盤面サイズ
 	size_t size_x_;
 	size_t size_y_;
+	size_t size_all_;
 	// ある箇所に対して、次に進める箇所の一覧
 	vector<vector<size_t>> point_next_;
 	// 清掃員の位置
@@ -35,6 +36,8 @@ class Problem{
 	size_t max_walk_count_;
 	// 正解ルートにおける清掃員の移動経路
 	vector<vector<vector<size_t>>> staff_root_;
+	// 最小移動コスト
+	vector<vector<size_t>> min_cost_;
 
 	// 拭く必要がある箇所は1、それ以外は0を立てる
 	// (まだ拭いていない箇所があれば非0、全て拭いていれば0)
