@@ -4,7 +4,7 @@ const size_t MAX_BOARD_SIZE{ 81 };
 
 // ビット演算用に用意するテーブル
 // bit[x]は、xビット目のみ立っている値となる
-__m128i bit[MAX_BOARD_SIZE];
+BitBoard bit[MAX_BOARD_SIZE];
 
 // ビット演算用にテーブルを準備する
 void initialize() noexcept{
@@ -40,11 +40,16 @@ void BitBoard::reverse_bit(const size_t index) noexcept {
 bool BitBoard::get_bit(const size_t index) const noexcept {
 	return (_mm_testz_si128(data_, bit[index]) == 0);
 }
+// 全てのビットが寝ていればtrue、そうでなければfalseを返す
+bool BitBoard::is_zero() const noexcept {
+	return (_mm_testz_si128(data_, data_) == 1);
+}
 // 0に初期化する
 void BitBoard::set_zero() noexcept {
 	data_ = _mm_setzero_si128();
 }
 
+// 出力(デバッグ用)
 void BitBoard::put(const size_t width, const size_t height) const noexcept {
 	for (size_t y = 0; y < height; ++y) {
 		for (size_t x = 0; x < width; ++x) {
