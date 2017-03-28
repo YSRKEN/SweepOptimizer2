@@ -274,12 +274,19 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 		for (size_t point = 0; point < size_all_; ++point) {
 			if (floor_dirty_.get_bit(point)) {
 				bool clean_flg = false;
+				const bool pool_flg = floor_pool_.get_bit(point);
+				const bool apple_flg = floor_apple_.get_bit(point);
+				const bool bottle_flg = floor_bottle_.get_bit(point);
 				for (const auto &staff : staff_all) {
 					size_t staff_point = point_staff_[staff.first][staff.second];
-					if (min_cost_[point][staff_point] <= walk_count_[staff.first][staff.second]) {
-						clean_flg = true;
-						break;
+					if (min_cost_[point][staff_point] > walk_count_[staff.first][staff.second]
+					|| pool_flg && staff.first != static_cast<size_t>(StaffType::Boy)
+					|| apple_flg && staff.first != static_cast<size_t>(StaffType::Girl)
+					|| bottle_flg && staff.first != static_cast<size_t>(StaffType::Robot)) {
+						continue;
 					}
+					clean_flg = true;
+					break;
 				}
 				if (!clean_flg)
 					return false;
