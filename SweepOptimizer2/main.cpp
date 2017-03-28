@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
 	try {
 		// ファイルを読み込む
 		//Problem problem(argv[1]);
-		Problem problem("q59.txt");
-		problem.put();
+		Problem problem("q44.txt");
+		//problem.put();
 		// 探索を行う
 		auto start_time = std::chrono::high_resolution_clock::now();
 		bool solve_flg = problem.solve(false);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 			problem.show_answer();
 		}
 		auto duaration = std::chrono::duration_cast< std::chrono::milliseconds >(end_time - start_time).count();
-		cout << duaration << "[ms]" << endl;
+		cout << argv[1] << "⇒" << duaration << "[ms]" << endl;
 	}
 	catch (char *str) {
 		cout << "エラー：" << str << endl;

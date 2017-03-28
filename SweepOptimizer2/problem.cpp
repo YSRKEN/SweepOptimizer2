@@ -325,9 +325,22 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 	BitBoard now_floor_pool_ = floor_pool_;
 	BitBoard now_floor_apple_ = floor_apple_;
 	BitBoard now_floor_bottle_ = floor_bottle_;
-	// 最大4方向に移動
+	// 移動方向を並び替える
+	/*vector<size_t> temp_point_next = point_next_[now_point];
+	size_t tpn_size = temp_point_next.size();
+	for (size_t i = 0; i < tpn_size - 1; ++i) {
+		for (size_t j = i + 1; j < tpn_size; ++j) {
+			if (!floor_dirty_.get_bit(temp_point_next[i]) && floor_dirty_.get_bit(temp_point_next[j])) {
+				size_t temp = temp_point_next[i];
+				temp_point_next[i] = temp_point_next[j];
+				temp_point_next[j] = temp;
+			}
+		}
+	}*/
+	// 最大3方向に移動
 	--walk_count_[staff.first][staff.second];
-	for (size_t next_point : point_next_[now_point]) {
+	//for (size_t next_point : temp_point_next) {
+	for(size_t next_point : point_next_[now_point]){
 		if (next_point == now_prev_point)
 			continue;
 		// 1歩進める
