@@ -54,6 +54,7 @@ Problem::Problem(const char file_name[]) {
 				floor_dirty_.set_bit(point);
 				break;
 			case FloorObject::Clean:
+				break;
 			case FloorObject::Boy:
 				// 拭く必要がない場所だが、清掃員(男の子)を記録する必要がある
 				point_staff_[static_cast<size_t>(StaffType::Boy)].push_back(point);
@@ -326,10 +327,20 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 			boy_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
 			break;
 		case static_cast<size_t>(StaffType::Girl) :
+		{
+			if (staff_task_[staff.first][staff.second] == StaffTask::NonFree
+				&& (min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]] & floor_around_dust_).is_zero())
+				return false;
 			girl_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+		}
 			break;
 		case static_cast<size_t>(StaffType::Robot) :
+		{
+			if (staff_task_[staff.first][staff.second] == StaffTask::NonFree
+				&& (min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]] & floor_around_recycle_).is_zero())
+				return false;
 			robot_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+		}
 			break;
 		}
 	}
@@ -446,10 +457,20 @@ bool Problem::solve_with_combo_impl(const size_t depth, const int step) {
 			boy_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
 			break;
 		case static_cast<size_t>(StaffType::Girl) :
+		{
+			if (staff_task_[staff.first][staff.second] == StaffTask::NonFree
+				&& (min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]] & floor_around_dust_).is_zero())
+				return false;
 			girl_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+		}
 			break;
 		case static_cast<size_t>(StaffType::Robot) :
+		{
+			if (staff_task_[staff.first][staff.second] == StaffTask::NonFree
+				&& (min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]] & floor_around_recycle_).is_zero())
+				return false;
 			robot_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+		}
 			break;
 		}
 	}
