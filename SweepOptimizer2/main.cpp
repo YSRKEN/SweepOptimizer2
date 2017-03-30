@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 	try {
 		// ファイルを読み込む
 		Problem problem(argv[1]);
-		//Problem problem("q46.txt");
+		//Problem problem("q61.txt");
 		//problem.put();
 		// 探索を行う
 		auto start_time = std::chrono::high_resolution_clock::now();

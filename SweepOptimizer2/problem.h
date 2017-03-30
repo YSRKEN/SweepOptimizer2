@@ -81,7 +81,7 @@ public:
 	// “à—e‚ð•\Ž¦‚·‚é
 	void put() const noexcept;
 	// –â‘è‚ð‰ð‚­
-	bool solve(bool combo_flg);
+	bool solve(const bool combo_flg);
 	// ‰ð‚ð•\Ž¦‚·‚é
 	void show_answer() const;
 };

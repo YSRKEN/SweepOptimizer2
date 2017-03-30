@@ -286,14 +286,13 @@ void Problem::put() const noexcept {
 }
 
 // 問題を解く
-bool Problem::solve(bool combo_flg){
+bool Problem::solve(const bool combo_flg){
 	if (combo_flg) {
 		return solve_with_combo_impl(max_walk_count_, static_cast<int>(walk_staff_list_[1].size() - 1));
 	}
 	else {
-
+		return solve_impl(max_walk_count_, static_cast<int>(walk_staff_list_[1].size() - 1));
 	}
-	return solve_impl(max_walk_count_, static_cast<int>(walk_staff_list_[1].size() - 1));
 }
 
 // 問題が解けていればtrue
@@ -315,33 +314,32 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 	if (depth == 0) {
 		return is_solved();
 	}
+	// 事前枝刈り
+	const auto &staff_all = walk_staff_list_[max_walk_count_ - depth + 1];
+	BitBoard boy_pattern; boy_pattern.set_zero();
+	BitBoard girl_pattern; girl_pattern.set_zero();
+	BitBoard robot_pattern; robot_pattern.set_zero();
+	for (const auto &staff : staff_all) {
+		size_t staff_point = point_staff_[staff.first][staff.second];
+		switch (staff.first) {
+		case static_cast<size_t>(StaffType::Boy) :
+			boy_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+			break;
+		case static_cast<size_t>(StaffType::Girl) :
+			girl_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+			break;
+		case static_cast<size_t>(StaffType::Robot) :
+			robot_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
+			break;
+		}
+	}
+	if ((!(boy_pattern | girl_pattern | robot_pattern).has_bit(floor_dirty_))
+		|| (!boy_pattern.has_bit(floor_pool_))
+		|| (!girl_pattern.has_bit(floor_apple_))
+		|| (!robot_pattern.has_bit(floor_bottle_)))
+		return false;
 	// step == -1 なら、depthを1つ増やす
 	if (step == -1) {
-		// 事前枝刈り
-		const auto &staff_all = walk_staff_list_[max_walk_count_ - depth + 1];
-		BitBoard boy_pattern; boy_pattern.set_zero();
-		BitBoard girl_pattern; girl_pattern.set_zero();
-		BitBoard robot_pattern; robot_pattern.set_zero();
-		for (const auto &staff : staff_all) {
-			size_t staff_point = point_staff_[staff.first][staff.second];
-			switch (staff.first) {
-			case static_cast<size_t>(StaffType::Boy) :
-				boy_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
-				break;
-			case static_cast<size_t>(StaffType::Girl) :
-				girl_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
-				break;
-			case static_cast<size_t>(StaffType::Robot) :
-				robot_pattern |= min_cost_bb_[staff_point][walk_count_[staff.first][staff.second]];
-				break;
-			}
-		}
-		if ((!(boy_pattern | girl_pattern | robot_pattern).has_bit(floor_dirty_))
-			|| (!boy_pattern.has_bit(floor_pool_))
-			|| (!girl_pattern.has_bit(floor_apple_))
-			|| (!robot_pattern.has_bit(floor_bottle_)))
-			return false;
-		// 枝刈りできなかったので探索を進める
 		const size_t depth_ = depth - 1;
 		return solve_impl(depth_, static_cast<int>(walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1));
 	}
@@ -355,7 +353,6 @@ bool Problem::solve_impl(const size_t depth, const int step) {
 	const BitBoard now_floor_pool_ = floor_pool_;
 	const BitBoard now_floor_apple_ = floor_apple_;
 	const BitBoard now_floor_bottle_ = floor_bottle_;
-	// 移動方向を並び替える
 	// 最大3方向に移動
 	--walk_count_[staff.first][staff.second];
 	for(size_t next_point : point_next_[now_point]){
@@ -425,7 +422,7 @@ bool Problem::solve_with_combo_impl(const size_t depth, const int step) {
 	if (depth == 0) {
 		return is_solved();
 	}
-	// step == -1 なら、depthを1つ増やす
+	// step == -1 なら、まずコンボ判定を行う
 	if (step == -1) {
 		// コンボ判定
 		for (const auto &staff_pair : combo_staff_list_) {
@@ -436,31 +433,33 @@ bool Problem::solve_with_combo_impl(const size_t depth, const int step) {
 				floor_dirty_.unset_mask(combo_point);
 			}
 		}
-		// 事前枝刈り
-		const auto &staff_all = walk_staff_list_[max_walk_count_ - depth + 1];
-		BitBoard boy_pattern; boy_pattern.set_zero();
-		BitBoard girl_pattern; girl_pattern.set_zero();
-		BitBoard robot_pattern; robot_pattern.set_zero();
-		for (const auto &staff : staff_all) {
-			size_t staff_point = point_staff_[staff.first][staff.second];
-			switch (staff.first) {
-			case static_cast<size_t>(StaffType::Boy) :
-				boy_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
-				break;
-			case static_cast<size_t>(StaffType::Girl) :
-				girl_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
-				break;
-			case static_cast<size_t>(StaffType::Robot) :
-				robot_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
-				break;
-			}
+	}
+	// 事前枝刈り
+	const auto &staff_all = walk_staff_list_[max_walk_count_ - depth + 1];
+	BitBoard boy_pattern; boy_pattern.set_zero();
+	BitBoard girl_pattern; girl_pattern.set_zero();
+	BitBoard robot_pattern; robot_pattern.set_zero();
+	for (const auto &staff : staff_all) {
+		size_t staff_point = point_staff_[staff.first][staff.second];
+		switch (staff.first) {
+		case static_cast<size_t>(StaffType::Boy) :
+			boy_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+			break;
+		case static_cast<size_t>(StaffType::Girl) :
+			girl_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+			break;
+		case static_cast<size_t>(StaffType::Robot) :
+			robot_pattern |= min_cost_bb_combo_[staff_point][walk_count_[staff.first][staff.second]];
+			break;
 		}
-		if ((!(boy_pattern | girl_pattern | robot_pattern).has_bit(floor_dirty_))
-			|| (!boy_pattern.has_bit(floor_pool_))
-			|| (!girl_pattern.has_bit(floor_apple_))
-			|| (!robot_pattern.has_bit(floor_bottle_)))
-			return false;
-		// 枝刈りできなかったので探索を進める
+	}
+	if ((!(boy_pattern | girl_pattern | robot_pattern).has_bit(floor_dirty_))
+		|| (!boy_pattern.has_bit(floor_pool_))
+		|| (!girl_pattern.has_bit(floor_apple_))
+		|| (!robot_pattern.has_bit(floor_bottle_)))
+		return false;
+	// step == -1 なら、depthを1つ増やす
+	if (step == -1) {
 		const size_t depth_ = depth - 1;
 		return solve_with_combo_impl(depth_, static_cast<int>(walk_staff_list_[max_walk_count_ - depth_ + 1].size() - 1));
 	}
@@ -474,7 +473,7 @@ bool Problem::solve_with_combo_impl(const size_t depth, const int step) {
 	const BitBoard now_floor_pool_ = floor_pool_;
 	const BitBoard now_floor_apple_ = floor_apple_;
 	const BitBoard now_floor_bottle_ = floor_bottle_;
-	// 最大4方向に移動
+	// 最大3方向に移動
 	--walk_count_[staff.first][staff.second];
 	for (size_t next_point : point_next_[now_point]) {
 		if (next_point == now_prev_point)
