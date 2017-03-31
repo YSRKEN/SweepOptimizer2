@@ -1,5 +1,7 @@
 ﻿#include <cstdlib>
+#include <iomanip>
 #include <iostream>
+#include <ctime>
 #include <chrono>
 #include "bitboard.h"
 #include "problem.h"
@@ -21,6 +23,15 @@ int main(int argc, char *argv[]) {
 		//Problem problem("q61.txt");
 		//problem.put();
 		// 探索を行う
+		cout << argv[1] << endl;
+		{
+			using std::chrono::system_clock;
+			system_clock::time_point p = system_clock::now();
+			// 出力
+			std::time_t t = system_clock::to_time_t(p);
+			const tm* lt = std::localtime(&t);
+			std::cout << std::put_time(lt, "%c") << std::endl;
+		}
 		auto start_time = std::chrono::high_resolution_clock::now();
 		bool solve_flg = problem.solve(false);
 		auto end_time = std::chrono::high_resolution_clock::now();
@@ -34,6 +45,14 @@ int main(int argc, char *argv[]) {
 		// 解を表示する
 		if (solve_flg) {
 			problem.show_answer();
+		}
+		{
+			using std::chrono::system_clock;
+			system_clock::time_point p = system_clock::now();
+			// 出力
+			std::time_t t = system_clock::to_time_t(p);
+			const tm* lt = std::localtime(&t);
+			std::cout << std::put_time(lt, "%c") << std::endl;
 		}
 		auto duaration = std::chrono::duration_cast< std::chrono::milliseconds >(end_time - start_time).count();
 		cout << argv[1] << "⇒" << duaration << "[ms]" << endl;
