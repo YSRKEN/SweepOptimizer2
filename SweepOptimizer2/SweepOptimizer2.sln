@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+VisualStudioVersion = 15.0.26228.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SweepOptimizer2", "SweepOptimizer2.vcxproj", "{EA69D901-A90D-493B-BC0D-D06BF1EB573B}"
 EndProject
@@ -9,6 +9,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		PGO|x64 = PGO|x64
+		PGO|x86 = PGO|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
@@ -17,6 +19,10 @@ Global
 		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.Debug|x64.Build.0 = Debug|x64
 		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.Debug|x86.ActiveCfg = Debug|Win32
 		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.Debug|x86.Build.0 = Debug|Win32
+		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.PGO|x64.ActiveCfg = PGO|x64
+		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.PGO|x64.Build.0 = PGO|x64
+		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.PGO|x86.ActiveCfg = PGO|Win32
+		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.PGO|x86.Build.0 = PGO|Win32
 		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.Release|x64.ActiveCfg = Release|x64
 		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.Release|x64.Build.0 = Release|x64
 		{EA69D901-A90D-493B-BC0D-D06BF1EB573B}.Release|x86.ActiveCfg = Release|Win32
